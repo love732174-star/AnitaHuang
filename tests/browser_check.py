@@ -7,7 +7,7 @@ from playwright.sync_api import sync_playwright
 
 with sync_playwright() as p:
     browser = p.chromium.launch(executable_path=shutil.which('chromium'), headless=True, args=['--no-sandbox'])
-    page = browser.new_page(viewport={'width': 390, 'height': 844}, device_scale_factor=1)
+    page = browser.new_page(viewport={'width': 390, 'height': 844}, device_scale_factor=1, service_workers='block')
     errors = []
     page.on('pageerror', lambda error: errors.append(str(error)))
     records = [{'id': 'test', 'created_at': '2026-11-11T01:00:00Z',

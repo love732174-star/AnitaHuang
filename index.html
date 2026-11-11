@@ -5,11 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#164f46">
   <meta name="description" content="登記設備、網路與環境問題，查看最新報修進度。">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="報修登記">
   <title>報修登記</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/png" href="./icons/icon-192.png">
+  <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="stylesheet" href="./style.css">
   <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
   <script defer src="./config.js"></script>
   <script defer src="./app.js"></script>
+  <script defer src="./pwa.js"></script>
 </head>
 <body>
   <header class="hero"><div class="shell">
@@ -18,6 +25,13 @@
     <p>填寫報修需求，讓每一件待辦都有進度。</p>
   </div></header>
   <main class="shell">
+    <aside class="pwa-tools" aria-label="安裝與連線狀態">
+      <button id="install-button" class="secondary" type="button" hidden>安裝報修登記</button>
+      <details><summary>安裝到手機或電腦</summary><p>Android／電腦 Chrome：在瀏覽器選單選「安裝應用程式」或「加入主畫面」。iPhone／iPad：以 Safari 開啟，點「分享」→「加入主畫面」。選單名稱依瀏覽器版本而異。</p><p>首次需連線開啟並完成快取，之後可離線開啟介面；送出報修與更新清單仍需要網路。</p></details>
+      <p id="pwa-message" class="message" role="status" aria-live="polite"></p>
+      <p id="network-message" class="message network-message" role="status" aria-live="polite" hidden></p>
+      <div id="update-panel" class="update-panel" hidden><p>有新版本可用；更新會重新載入頁面。</p><button id="update-button" type="button">更新版本</button></div>
+    </aside>
     <section class="panel" aria-labelledby="form-title">
       <div class="section-heading"><div><p class="eyebrow">01 / NEW REQUEST</p><h2 id="form-title">報修登記</h2></div><span class="note">所有欄位皆必填</span></div>
       <p class="privacy">報修清單為公開資訊，請勿填入電話、密碼或其他敏感資料。</p>
