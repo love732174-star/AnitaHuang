@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#164f46">
+  <meta name="description" content="登記設備、網路與環境問題，查看最新報修進度。">
+  <title>報修登記</title>
+  <link rel="stylesheet" href="./style.css">
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
+  <script defer src="./config.js"></script>
+  <script defer src="./app.js"></script>
+</head>
+<body>
+  <header class="hero"><div class="shell">
+    <p class="eyebrow">REPAIR DESK / 維修服務</p>
+    <h1>把問題交給我們。</h1>
+    <p>填寫報修需求，讓每一件待辦都有進度。</p>
+  </div></header>
+  <main class="shell">
+    <section class="panel" aria-labelledby="form-title">
+      <div class="section-heading"><div><p class="eyebrow">01 / NEW REQUEST</p><h2 id="form-title">報修登記</h2></div><span class="note">所有欄位皆必填</span></div>
+      <p class="privacy">報修清單為公開資訊，請勿填入電話、密碼或其他敏感資料。</p>
+      <form id="repair-form">
+        <div class="form-grid">
+          <label>報修人<input name="reporter_name" autocomplete="name" maxlength="100" placeholder="請填寫姓名" required></label>
+          <label>地點或部門<input name="location" maxlength="200" placeholder="例如：3 樓會議室 / 行政部" required></label>
+          <label>類別<select name="category" required><option value="" disabled selected>請選擇問題類別</option><option>設備</option><option>網路</option><option>環境</option><option>其他</option></select></label>
+          <label>緊急程度<select name="urgency" required><option>低</option><option selected>中</option><option>高</option></select></label>
+        </div>
+        <label class="description-label">問題說明<textarea name="description" rows="5" maxlength="2000" placeholder="請描述問題、發生時間與影響範圍，幫助我們更快處理。" required></textarea></label>
+        <div class="form-footer"><span class="note">問題說明最多 2,000 字</span><button id="submit-button" type="submit" disabled>送出報修 <span aria-hidden="true">↗</span></button></div>
+        <p id="form-message" class="message" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+    <section class="requests" aria-labelledby="list-title">
+      <div class="section-heading"><div><p class="eyebrow">02 / RECENT REQUESTS</p><h2 id="list-title">最近報修</h2><p class="note">最近 20 筆 · 最新的在最上方</p></div><button id="refresh-button" class="secondary" type="button">重新整理</button></div>
+      <p id="list-message" class="message" role="status" aria-live="polite">正在載入報修清單…</p>
+      <ul id="request-list" class="request-list" aria-label="最近報修清單"></ul>
+    </section>
+  </main>
+  <footer class="shell site-footer">報修登記 · 讓工作環境更好一點</footer>
+</body>
+</html>
