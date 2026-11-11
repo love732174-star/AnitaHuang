@@ -6,6 +6,11 @@
   const formMessage = document.querySelector('#form-message');
   const listMessage = document.querySelector('#list-message');
   const list = document.querySelector('#request-list');
+  const filterButtons = document.querySelectorAll('#urgency-filters button');
+  const filterMessage = document.querySelector('#filter-message');
+  let cachedRequests = [];
+  let selectedUrgency = '全部';
+  let hasLoadedRequests = false;
   let client;
   let submitting = false;
   let loading = false;
@@ -50,6 +55,25 @@
     list.replaceChildren(fragment);
   }
 
+  // 篩選僅處理已載入的最近 20 筆，不發送資料庫請求。
+  function applyUrgencyFilter() {
+    const visibleRequests = selectedUrgency === '全部' ? cachedRequests
+      : cachedRequests.filter((request) => request.urgency === selectedUrgency);
+    renderRequests(visibleRequests);
+    for (const button of filterButtons) {
+      button.setAttribute('aria-pressed', String(button.dataset.filter === selectedUrgency));
+    }
+    message(filterMessage, hasLoadedRequests && cachedRequests.length && !visibleRequests.length
+      ? `最近 20 筆中沒有緊急程度為「${selectedUrgency}」的報修。` : '');
+  }
+
+  for (const button of filterButtons) {
+    button.addEventListener('click', () => {
+      selectedUrgency = button.dataset.filter;
+      applyUrgencyFilter();
+    });
+  }
+
   async function loadRequests() {
     if (loading || !client) return;
     loading = true;
@@ -61,10 +85,12 @@
         .select('id, created_at, reporter_name, location, category, description, urgency, status')
         .order('created_at', { ascending: false }).order('id', { ascending: false }).limit(20);
       if (error) throw error;
-      renderRequests(data ?? []);
+      cachedRequests = data ?? [];
+      hasLoadedRequests = true;
+      applyUrgencyFilter();
       message(listMessage, data?.length ? '' : '目前還沒有報修紀錄，歡迎登記第一筆需求。');
     } catch (error) {
-      message(listMessage, `清單更新失敗。${errorText(error)}${list.children.length ? ' 下方保留上次載入的資料。' : ''}`, 'error');
+      message(listMessage, `清單更新失敗。${errorText(error)}${hasLoadedRequests ? ' 保留上次載入的資料及篩選條件。' : ''}`, 'error');
     } finally {
       loading = false;
       refreshButton.disabled = false;
