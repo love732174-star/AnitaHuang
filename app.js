@@ -76,6 +76,10 @@
 
   async function loadRequests() {
     if (loading || !client) return;
+    if (!navigator.onLine) {
+      message(listMessage, '目前離線，無法更新清單。連線後會重新讀取；下方如有資料，為本頁先前載入的內容。', 'error');
+      return;
+    }
     loading = true;
     refreshButton.disabled = true;
     list.setAttribute('aria-busy', 'true');
@@ -100,6 +104,10 @@
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
+    if (!navigator.onLine) {
+      message(formMessage, '目前離線，報修尚未送出；請保留此頁，恢復連線後再送出。', 'error');
+      return;
+    }
     if (submitting || !client || !form.reportValidity()) return;
     const values = new FormData(form);
     // 僅傳送獲授權的五個欄位；status、id、created_at 由資料庫產生。
@@ -130,6 +138,10 @@
     }
   });
   refreshButton.addEventListener('click', loadRequests);
+  window.addEventListener('online', () => {
+    if (client) loadRequests();
+    else message(listMessage, '連線已恢復，請重新載入頁面以初始化報修服務。');
+  });
 
   try {
     const config = window.REPAIR_CONFIG;
@@ -141,7 +153,7 @@
           const controller = new AbortController();
           const timeout = setTimeout(() => controller.abort(), 15000);
           try {
-            return await fetch(url, { ...options, signal: controller.signal });
+            return await fetch(url, { ...options, cache: 'no-store', signal: controller.signal });
           } finally {
             clearTimeout(timeout);
           }
@@ -152,7 +164,9 @@
     loadRequests();
   } catch {
     refreshButton.disabled = true;
-    message(formMessage, '無法初始化報修服務，請重新載入頁面，或聯絡管理員檢查連線設定與 CDN。', 'error');
+    message(formMessage, navigator.onLine
+      ? '無法初始化報修服務，請重新載入頁面，或聯絡管理員檢查連線設定與 CDN。'
+      : '目前離線，報修尚未送出。連線後請重新載入頁面。', 'error');
     message(listMessage, '報修服務尚未就緒，無法載入清單。', 'error');
   }
 })();
