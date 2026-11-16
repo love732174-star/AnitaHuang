@@ -4,62 +4,98 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#164f46">
-  <meta name="description" content="登記設備、網路與環境問題，查看最新報修進度。">
+  <meta name="description" content="記錄每日收入與支出，查看每月結餘與分類統計。">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="報修登記">
-  <title>報修登記</title>
+  <meta name="apple-mobile-web-app-title" content="記帳本">
+  <title>記帳本</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" type="image/png" href="./icons/icon-192.png">
   <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png">
   <link rel="stylesheet" href="./style.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
-  <script defer src="./config.js"></script>
   <script defer src="./app.js"></script>
   <script defer src="./pwa.js"></script>
 </head>
 <body>
   <header class="hero"><div class="shell">
-    <p class="eyebrow">REPAIR DESK / 維修服務</p>
-    <h1>把問題交給我們。</h1>
-    <p>填寫報修需求，讓每一件待辦都有進度。</p>
+    <p class="eyebrow">LEDGER / 個人記帳</p>
+    <h1>每一筆，都算數。</h1>
+    <p>記下收入與支出，月底一眼看懂錢去了哪裡。</p>
   </div></header>
   <main class="shell">
-    <aside class="pwa-tools" aria-label="安裝與連線狀態">
-      <button id="install-button" class="secondary" type="button" hidden>安裝報修登記</button>
-      <details><summary>安裝到手機或電腦</summary><p>Android／電腦 Chrome：在瀏覽器選單選「安裝應用程式」或「加入主畫面」。iPhone／iPad：以 Safari 開啟，點「分享」→「加入主畫面」。選單名稱依瀏覽器版本而異。</p><p>首次需連線開啟並完成快取，之後可離線開啟介面；送出報修與更新清單仍需要網路。</p></details>
+    <aside class="pwa-tools" aria-label="安裝與儲存狀態">
+      <button id="install-button" class="secondary" type="button" hidden>安裝記帳本</button>
+      <details><summary>安裝到手機或電腦</summary><p>Android／電腦 Chrome：在瀏覽器選單選「安裝應用程式」或「加入主畫面」。iPhone／iPad：以 Safari 開啟，點「分享」→「加入主畫面」。選單名稱依瀏覽器版本而異。</p><p>帳目只儲存在這台裝置的這個瀏覽器中，不會上傳；首次連線開啟後可離線記帳。換裝置或清除瀏覽器資料前，請先用「匯出 CSV」備份。</p></details>
       <p id="pwa-message" class="message" role="status" aria-live="polite"></p>
-      <p id="network-message" class="message network-message" role="status" aria-live="polite" hidden></p>
-      <div id="update-panel" class="update-panel" hidden><p>有新版本可用；更新會重新載入頁面。</p><button id="update-button" type="button">更新版本</button></div>
+      <p id="storage-message" class="message network-message" role="alert" hidden></p>
+      <div id="update-panel" class="update-panel" hidden><p>有新版本可用；更新會重新載入頁面，已儲存的帳目不受影響。</p><button id="update-button" type="button">更新版本</button></div>
     </aside>
+
     <section class="panel" aria-labelledby="form-title">
-      <div class="section-heading"><div><p class="eyebrow">01 / NEW REQUEST</p><h2 id="form-title">報修登記</h2></div><span class="note">所有欄位皆必填</span></div>
-      <p class="privacy">報修清單為公開資訊，請勿填入電話、密碼或其他敏感資料。</p>
-      <form id="repair-form">
+      <div class="section-heading"><div><p class="eyebrow">01 / NEW ENTRY</p><h2 id="form-title">記一筆</h2></div><span class="note">備註可留空</span></div>
+      <form id="entry-form" novalidate>
+        <fieldset class="type-toggle">
+          <legend class="visually-hidden">類型</legend>
+          <label><input type="radio" name="type" value="expense" checked><span>支出</span></label>
+          <label><input type="radio" name="type" value="income"><span>收入</span></label>
+        </fieldset>
         <div class="form-grid">
-          <label>報修人<input name="reporter_name" autocomplete="name" maxlength="100" placeholder="請填寫姓名" required></label>
-          <label>地點或部門<input name="location" maxlength="200" placeholder="例如：3 樓會議室 / 行政部" required></label>
-          <label>類別<select name="category" required><option value="" disabled selected>請選擇問題類別</option><option>設備</option><option>網路</option><option>環境</option><option>其他</option></select></label>
-          <label>緊急程度<select name="urgency" required><option>低</option><option selected>中</option><option>高</option></select></label>
+          <label>金額<input name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" placeholder="0" required></label>
+          <label>類別<select name="category" required></select></label>
+          <label>日期<input name="date" type="date" required></label>
+          <label>備註<input name="note" maxlength="100" placeholder="例如：午餐便當"></label>
         </div>
-        <label class="description-label">問題說明<textarea name="description" rows="5" maxlength="2000" placeholder="請描述問題、發生時間與影響範圍，幫助我們更快處理。" required></textarea></label>
-        <div class="form-footer"><span class="note">問題說明最多 2,000 字</span><button id="submit-button" type="submit" disabled>送出報修 <span aria-hidden="true">↗</span></button></div>
+        <div class="form-footer">
+          <button id="cancel-edit" class="secondary" type="button" hidden>取消編輯</button>
+          <button id="submit-button" type="submit">記一筆 <span aria-hidden="true">＋</span></button>
+        </div>
         <p id="form-message" class="message" role="status" aria-live="polite"></p>
       </form>
     </section>
-    <section class="requests" aria-labelledby="list-title">
-      <div class="section-heading"><div><p class="eyebrow">02 / RECENT REQUESTS</p><h2 id="list-title">最近報修</h2><p class="note">最近 20 筆 · 最新的在最上方</p></div><button id="refresh-button" class="secondary" type="button">重新整理</button></div>
-      <div id="urgency-filters" class="urgency-filters" role="group" aria-label="依緊急程度篩選">
-        <button type="button" class="filter-button" data-filter="全部" aria-pressed="true">全部</button>
-        <button type="button" class="filter-button" data-filter="高" aria-pressed="false">高</button>
-        <button type="button" class="filter-button" data-filter="中" aria-pressed="false">中</button>
-        <button type="button" class="filter-button" data-filter="低" aria-pressed="false">低</button>
+
+    <section class="summary" aria-labelledby="summary-title">
+      <div class="section-heading">
+        <div><p class="eyebrow">02 / MONTHLY SUMMARY</p><h2 id="summary-title">每月總覽</h2></div>
+        <div class="month-nav">
+          <button id="prev-month" class="secondary icon-button" type="button" aria-label="上個月">‹</button>
+          <input id="month-picker" type="month" aria-label="選擇月份">
+          <button id="next-month" class="secondary icon-button" type="button" aria-label="下個月">›</button>
+        </div>
       </div>
-      <p id="filter-message" class="message" role="status" aria-live="polite"></p>
-      <p id="list-message" class="message" role="status" aria-live="polite">正在載入報修清單…</p>
-      <ul id="request-list" class="request-list" aria-label="最近報修清單"></ul>
+      <div class="stats">
+        <div class="stat"><span class="stat-label">收入</span><strong id="stat-income" class="stat-value income">0</strong></div>
+        <div class="stat"><span class="stat-label">支出</span><strong id="stat-expense" class="stat-value expense">0</strong></div>
+        <div class="stat"><span class="stat-label">結餘</span><strong id="stat-balance" class="stat-value">0</strong></div>
+      </div>
+      <div class="breakdown">
+        <h3>支出分類</h3>
+        <p id="breakdown-empty" class="note">這個月還沒有支出。</p>
+        <ul id="breakdown-list" class="breakdown-list" aria-label="本月支出分類"></ul>
+      </div>
+    </section>
+
+    <section class="records" aria-labelledby="list-title">
+      <div class="section-heading"><div><p class="eyebrow">03 / RECORDS</p><h2 id="list-title">本月明細</h2><p id="list-count" class="note"></p></div></div>
+      <div id="type-filters" class="type-filters" role="group" aria-label="依類型篩選">
+        <button type="button" class="filter-button" data-filter="all" aria-pressed="true">全部</button>
+        <button type="button" class="filter-button" data-filter="expense" aria-pressed="false">支出</button>
+        <button type="button" class="filter-button" data-filter="income" aria-pressed="false">收入</button>
+      </div>
+      <p id="list-message" class="message" role="status" aria-live="polite"></p>
+      <div id="record-list" class="record-list"></div>
+    </section>
+
+    <section class="data-tools" aria-labelledby="data-title">
+      <div class="section-heading"><div><p class="eyebrow">04 / BACKUP</p><h2 id="data-title">備份與還原</h2></div></div>
+      <p class="note">CSV 可用 Excel 或 Google 試算表開啟。匯入時會略過已存在的帳目，不會覆蓋現有資料。</p>
+      <div class="data-actions">
+        <button id="export-button" type="button">匯出 CSV</button>
+        <label class="file-button secondary">匯入 CSV<input id="import-input" type="file" accept=".csv,text/csv"></label>
+        <button id="clear-button" class="danger" type="button">清除全部帳目</button>
+      </div>
+      <p id="data-message" class="message" role="status" aria-live="polite"></p>
     </section>
   </main>
-  <footer class="shell site-footer">報修登記 · 讓工作環境更好一點</footer>
+  <footer class="shell site-footer">記帳本 · 資料只存在你的裝置上</footer>
 </body>
 </html>
