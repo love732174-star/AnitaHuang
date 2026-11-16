@@ -2,13 +2,13 @@
 
 ## 專案結構與模組組織
 
-本儲存庫為純 HTML/CSS/JavaScript 報修前端，GitHub Pages 從根目錄的 index.html 載入；style.css、app.js 與公開連線設定 config.js 同樣放在根目錄。manifest.webmanifest、sw.js、pwa.js 與 icons/ 提供 PWA 安裝、靜態快取與圖示；supabase/schema.sql 管理資料表設計，tests/ 提供模擬 API 的瀏覽器驗證。
+本儲存庫為純 HTML/CSS/JavaScript 個人記帳前端，GitHub Pages 從根目錄的 index.html 載入；style.css 與 app.js 同樣放在根目錄，帳目存在瀏覽器 localStorage，沒有後端或 API。manifest.webmanifest、sw.js、pwa.js 與 icons/ 提供 PWA 安裝、靜態快取與圖示；tests/ 提供瀏覽器驗證；docs/screenshots/ 放畫面截圖；文件/ 為舊報修專案的參考文件。
 
 隨專案發展，除非框架另有要求，應將應用程式碼放在 `src/`、自動化測試放在 `tests/`、說明文件放在 `docs/`。靜態素材請放在名稱明確的 `assets/` 或框架標準目錄。實際結構確立後，請同步更新本指南。
 
 ## 建置、測試與開發指令
 
-不需建置；使用 Python 3 的 `python -m http.server 8000` 預覽。使用 Node.js 執行 `node --check app.js` 與 `node --check config.js`。PWA 語法檢查另用 `node --check pwa.js`、`node --check sw.js`；`python tests/pwa_check.py` 自行啟動測試伺服器。瀏覽器測試環境與執行方式見 README.md；未設定 npm test、make build 或格式化工具。
+不需建置；使用 Python 3 的 `python -m http.server 8000` 預覽。使用 Node.js 執行 `node --check app.js`、`node --check pwa.js`、`node --check sw.js`；`python tests/browser_check.py` 與 `python tests/pwa_check.py` 皆自行啟動測試伺服器，可用 `CHROMIUM_PATH` 指定瀏覽器。瀏覽器測試環境與執行方式見 README.md；未設定 npm test、make build 或格式化工具。
 
 加入第一版實作時，請記錄所需的執行環境版本、相依套件安裝、本機啟動、正式環境建置及驗證指令。說明必須與已提交的腳本及設定檔一致。
 
@@ -20,7 +20,7 @@
 
 ## 測試指南
 
-使用 Python Playwright 與 Chromium 進行瀏覽器驗證，API 使用模擬回應，不得由測試寫入正式報修資料；未設定覆蓋率門檻。請依實作技術選擇適合的框架，並在此記錄執行方式。測試名稱應清楚描述受測行為與預期結果。修正錯誤時應加入回歸測試，新增功能時應加入有意義的行為測試；無法執行的驗證項目須明確說明。
+使用 Python Playwright 與 Chromium 進行瀏覽器驗證，資料只寫入測試用瀏覽器設定檔，不得讀寫使用者實際帳目；未設定覆蓋率門檻。請依實作技術選擇適合的框架，並在此記錄執行方式。測試名稱應清楚描述受測行為與預期結果。修正錯誤時應加入回歸測試，新增功能時應加入有意義的行為測試；無法執行的驗證項目須明確說明。
 
 ## 提交與合併請求指南
 
@@ -32,4 +32,4 @@
 
 請勿提交憑證、私人資料或本機環境設定檔。必要時提供使用佔位值的設定範例，並在加入產生的檔案或相依套件前，先設定適當的 Git 忽略規則。
 
-PWA 靜態檔案改動時須遞增 sw.js 的快取版本；不快取報修 API、表單內容或清單，不加入離線自動補送。所有 PWA 資源使用相對路徑以支援 GitHub Pages 子目錄。
+PWA 靜態檔案改動時須遞增 sw.js 的快取版本；Service Worker 只快取白名單靜態檔案，不把帳目放入快取，也不加入外部 CDN 或追蹤腳本。localStorage 的鍵名或資料格式變更時須提供舊資料轉換。所有 PWA 資源使用相對路徑以支援 GitHub Pages 子目錄。

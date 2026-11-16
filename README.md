@@ -1,42 +1,48 @@
-報修登記系統
-用於登記報修需求，方便追蹤與管理維修進度。
-雲端任務測試
-[報修欄位表（Excel）](文件/報修欄位表.xlsx)
+# 記帳本
 
-## 網頁前端
+個人記帳網頁：記錄每日收入與支出，查看每月收入、支出、結餘與支出分類比例。可安裝到手機主畫面，離線也能記帳。
 
-根目錄的 `index.html`、`style.css`、`app.js` 與 `config.js` 是無需建置的純 HTML/CSS/JavaScript 前端。Supabase JS v2 由固定版本 CDN 載入；`config.js` 僅含可公開的專案網址及 publishable key，不可放入 secret 或 service_role 金鑰。資料庫須先具備 `supabase/schema.sql` 的資料表及權限。
+![手機畫面](docs/screenshots/mobile.png)
 
-本機預覽需要 Python 3：在根目錄執行 `python -m http.server 8000`，再開啟 `http://localhost:8000`。沒有套件安裝或正式環境建置步驟。
+## 功能
 
-GitHub Pages 請在 Settings → Pages 選擇 Deploy from a branch、`main`、`/ (root)`。預期網址為 https://love732174-star.github.io/AnitaHuang/ 。合併程式碼不代表已啟用 Pages。
+- **記一筆**：選擇支出／收入、金額（最多兩位小數）、類別、日期與備註（可留空）。
+- **每月總覽**：切換月份，查看當月收入、支出、結餘，以及各支出類別的金額與比例。
+- **本月明細**：依日期分組（新的在上方），顯示每日小計；可依「全部／支出／收入」篩選，每筆可編輯或刪除（刪除前會確認）。
+- **備份與還原**：匯出 CSV（含 BOM，Excel 可直接開啟中文）；匯入 CSV 時依「編號」欄略過已存在的帳目，不會覆蓋現有資料。清除全部帳目前會再次確認。
 
-JavaScript 語法檢查需要 Node.js：`node --check app.js` 與 `node --check config.js`。瀏覽器測試使用 Python 3、Playwright（`pip install playwright`）與 Chromium（系統 Chromium 或 `python -m playwright install chromium`）；啟動上述本機伺服器後執行 `python tests/browser_check.py`。測試模擬 Supabase API，不寫入正式資料，涵蓋手機寬度、文字安全、清單排序與筆數、送出欄位、成功、錯誤、空白驗證及空清單。
+類別：支出為餐飲、交通、購物、居家、娛樂、醫療、教育、其他；收入為薪資、獎金、投資、兼職、其他。
 
+## 資料儲存
 
-## 緊急程度篩選
+帳目只存在目前裝置瀏覽器的 `localStorage`（鍵名 `ledger-records-v1`），**不會上傳到任何伺服器**，也不需要帳號。因此：
 
-最近報修清單上方新增「全部／高／中／低」按鈕，預設為「全部」；選中的按鈕以深綠底、白字及底線標示，並提供 `aria-pressed` 狀態。篩選只處理網頁已讀取的最近 20 筆，保留原本由新到舊的排序，不會額外查詢 Supabase，也不代表篩選整個資料庫；沒有符合項目時會顯示提示。重新整理清單或成功送出報修後，會保留目前的篩選條件。
+- 不同裝置、不同瀏覽器之間資料不會同步。
+- 清除瀏覽器網站資料、無痕模式關閉後，帳目會消失；請定期「匯出 CSV」備份，換裝置時再匯入。
+- 瀏覽器無法儲存時，頁面會顯示黃色提示。
 
-緊急程度為「高」的標籤改為淺紅底、深紅字。這次只變更網頁呈現與說明，沒有修改資料庫、增加欄位或變更 `supabase/`。
+## 本機預覽與部署
 
-手機驗收：開啟此 PR 分支的本機預覽，捲到「最近報修」，確認四個按鈕完整顯示；依序點選「高／中／低」，確認按鈕選取外觀、顯示的報修緊急程度與無結果提示；點選「全部」應恢復原清單。「高」的標籤應為紅色，畫面不應左右溢出。此 PR 尚未合併，因此正式 GitHub Pages 不會顯示這次變更。
+不需建置。本機預覽需要 Python 3：在根目錄執行 `python -m http.server 8000`，再開啟 `http://localhost:8000`。
 
-[報修系統操作說明（Word）](文件/報修系統操作說明.docx)
-
-[報修登記系統提案（PowerPoint）](文件/報修登記系統提案.pptx)
+GitHub Pages 請在 Settings → Pages 選擇 Deploy from a branch、`main`、`/ (root)`。預期網址為 https://love732174-star.github.io/AnitaHuang/ 。
 
 ## PWA 安裝與離線使用
 
-網站已加入 `manifest.webmanifest`、主畫面圖示與 `sw.js`，支援安裝後以獨立視窗開啟。所有路徑相對於網站目錄，適用 GitHub Pages 的 `/AnitaHuang/` 子路徑；正式部署須使用 HTTPS，本機可使用 `localhost` 或 `127.0.0.1`。直接開啟 `file://index.html` 無法啟用 Service Worker。
+- Android／電腦 Chrome：使用頁面上的「安裝記帳本」（瀏覽器提供安裝提示時顯示），或選單的「安裝應用程式／加入主畫面」。
+- iPhone／iPad：用 Safari 開啟，選「分享 → 加入主畫面」。
+- 首次需連線開啟並完成 Service Worker 快取，之後可離線開啟並記帳。
+- 有新版本時顯示「更新版本」，點選後重新載入；已儲存的帳目不受影響，只有表單中尚未記下的內容會清除（會先確認）。
+- 修改快取的靜態檔案時，須一併遞增 `sw.js` 的 `CACHE_NAME` 版本（目前 `v1`）。新版啟用時也會清除舊版報修網頁留下的快取。
 
-- Android／電腦 Chrome：開啟網站後，使用頁面上的「安裝報修登記」（瀏覽器提供安裝提示時顯示），或選單的「安裝應用程式／加入主畫面」。
-- iPhone／iPad：用 Safari 開啟網站，選「分享 → 加入主畫面」。實際選單與安裝支援依瀏覽器版本而異；不支援安裝時仍可用一般網頁。
-- 首次需連線載入並完成 Service Worker 快取；之後可離線重開操作介面。離線不能送出報修或更新清單，沒有離線排程、自動補送或背景同步。
-- 快取只儲存白名單靜態檔案及可取得的固定版本 CDN SDK，不快取 Supabase API 或報修清單。已開啟頁面中的舊清單只留在記憶體；離線重新開啟不會還原。若 SDK 未快取，離線仍能看到介面，連線後需重新載入才能初始化服務。
-- 表單文字不寫入本機儲存空間，關閉或重新載入會消失。恢復連線後，已初始化的頁面會重新讀清單，但報修需自行確認並送出，避免重複登記。
-- 有新版本時顯示「更新版本」，由使用者點選後重新載入；有未送出文字會要求確認，送出期間不執行更新。其他開啟的分頁可在下次重新載入後使用新版本。
+## 驗證
 
-修改快取的靜態檔案時，須一併遞增 `sw.js` 的 `CACHE_NAME` 版本（目前 `v1`），確保新介面能被偵測。舊快取只清理同一應用路徑的版本，不會刪除其他專案的快取。`config.js` 仍只可放公開 publishable key。
+- 語法檢查（Node.js）：`node --check app.js`、`node --check pwa.js`、`node --check sw.js`
+- 瀏覽器測試需要 Python 3、Playwright（`pip install playwright`）與 Chromium（系統 `chromium`、`python -m playwright install chromium`，或以環境變數 `CHROMIUM_PATH` 指定執行檔）。兩支測試都會自行啟動測試伺服器：
+  - `python tests/browser_check.py`：驗證、新增／編輯／刪除、重新載入後保存、每月統計與分類、篩選、月份切換、文字安全、CSV 匯出匯入與去重、損壞資料容錯、手機寬度；截圖輸出到 `tests/output/`（已加入 `.gitignore`）。
+  - `python tests/pwa_check.py`：安裝條件、GitHub Pages 子路徑、圖示、快取範圍、舊快取清除、無外部請求、離線記帳與重開、更新確認。
 
-PWA 驗證：執行 `node --check pwa.js`、`node --check sw.js` 與 `python tests/pwa_check.py`。後者自行啟動測試伺服器，用 Chromium 一般使用者設定檔與模擬 Supabase API 驗證安裝條件、GitHub Pages 子路徑、圖示、離線重開、離線不送出、不快取資料及更新確認；不寫入正式資料。SDK 需能從 CDN 下載。原 `tests/browser_check.py` 專注表單互動並停用 Service Worker，以免影響 API 模擬；PWA 測試則實際啟用 Service Worker。手機實機安裝仍須於正式 HTTPS 網址驗收。
+## 舊報修系統文件
+
+本專案原為報修登記系統，網頁已改為記帳本。`文件/` 內的報修欄位表、操作說明與提案簡報為舊專案資料，保留供參考：
+[報修欄位表](文件/報修欄位表.xlsx) · [報修系統操作說明](文件/報修系統操作說明.docx) · [報修登記系統提案](文件/報修登記系統提案.pptx)
