@@ -1,6 +1,7 @@
 """PWA 測試：自行啟動 GitHub Pages 子目錄伺服器，驗證安裝條件、離線記帳與更新確認。"""
 import functools
 import os
+import re
 import shutil
 import tempfile
 import threading
@@ -9,7 +10,7 @@ from pathlib import Path
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-state = {'version': 'v1'}
+state = {'version': None}
 
 
 class Handler(SimpleHTTPRequestHandler):
@@ -19,7 +20,11 @@ class Handler(SimpleHTTPRequestHandler):
             return
         self.path = '/' + self.path[len('/AnitaHuang/'):]
         if self.path == '/sw.js':
-            data = (ROOT / 'sw.js').read_text().replace('${CACHE_PREFIX}v1', '${CACHE_PREFIX}' + state['version']).encode()
+            data = (ROOT / 'sw.js').read_text()
+            if state['version']:
+                # 模擬下一版：不論目前版本號為何，都換成測試用的新版本。
+                data = re.sub(r'\$\{CACHE_PREFIX\}v\d+', '${CACHE_PREFIX}' + state['version'], data)
+            data = data.encode()
             self.send_response(200)
             self.send_header('Content-Type', 'application/javascript')
             self.send_header('Cache-Control', 'no-store')
@@ -77,7 +82,7 @@ try:
 
         # 有未記下的內容時更新需確認；更新後已儲存的帳目仍在。
         page.locator('[name=note]').fill('未記下')
-        state['version'] = 'v2'
+        state['version'] = 'vtest'
         page.evaluate('async () => (await navigator.serviceWorker.ready).update()')
         page.locator('#update-panel').wait_for(state='visible', timeout=15000)
         page.once('dialog', lambda dialog: dialog.dismiss())
@@ -86,7 +91,7 @@ try:
         page.once('dialog', lambda dialog: dialog.accept())
         page.locator('#update-button').click()
         page.wait_for_function("document.querySelector('[name=note]').value === ''")
-        page.wait_for_function("async () => (await caches.keys()).filter(n => n.startsWith('ledger-shell-')).every(n => n.endsWith('v2'))")
+        page.wait_for_function("async () => (await caches.keys()).filter(n => n.startsWith('ledger-shell-')).every(n => n.endsWith('vtest'))")
         assert page.locator('.record', has_text='離線記帳').count() == 1
         context.close()
         print('PASS: installability, GitHub Pages subpath, icons, scoped cache, legacy cache cleanup, no external requests, '

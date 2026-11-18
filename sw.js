@@ -3,7 +3,7 @@ const BASE = new URL('./', self.location.href);
 const CACHE_PREFIX = `ledger-shell-${BASE.pathname}-`;
 // 舊版報修網頁的快取，啟用新版時一併清除。
 const LEGACY_PREFIX = `repair-desk-shell-${BASE.pathname}-`;
-const CACHE_NAME = `${CACHE_PREFIX}v1`;
+const CACHE_NAME = `${CACHE_PREFIX}v2`;
 const SHELL_FILES = [
   './index.html', './style.css', './app.js', './pwa.js',
   './manifest.webmanifest', './icons/icon-192.png', './icons/icon-512.png',
