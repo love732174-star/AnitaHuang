@@ -42,8 +42,13 @@
         <div class="form-grid">
           <label>金額<input name="amount" type="number" inputmode="decimal" min="0.01" max="999999999" step="0.01" placeholder="0" required></label>
           <label>類別<select name="category" required></select></label>
+          <label id="payment-field">付款方式<select name="payment" required>
+            <option value="" disabled>請選擇付款方式</option>
+            <option selected>現金</option>
+            <optgroup label="刷卡"><option>刷卡-匯豐</option><option>刷卡-gogo</option><option>刷卡-一銀</option><option>刷卡-富邦</option></optgroup>
+          </select></label>
           <label>日期<input name="date" type="date" required></label>
-          <label>備註<input name="note" maxlength="100" placeholder="例如：午餐便當"></label>
+          <label class="wide">備註<input name="note" maxlength="100" placeholder="例如：午餐便當"></label>
         </div>
         <div class="form-footer">
           <button id="cancel-edit" class="secondary" type="button" hidden>取消編輯</button>
@@ -71,6 +76,11 @@
         <h3>支出分類</h3>
         <p id="breakdown-empty" class="note">這個月還沒有支出。</p>
         <ul id="breakdown-list" class="breakdown-list" aria-label="本月支出分類"></ul>
+      </div>
+      <div class="breakdown">
+        <h3>付款方式</h3>
+        <p id="payment-empty" class="note">這個月還沒有支出。</p>
+        <ul id="payment-list" class="breakdown-list" aria-label="本月支出付款方式"></ul>
       </div>
     </section>
 

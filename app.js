@@ -5,9 +5,12 @@
     expense: ['餐飲', '交通', '購物', '居家', '娛樂', '醫療', '教育', '其他'],
     income: ['薪資', '獎金', '投資', '兼職', '其他'],
   };
+  // 付款方式只用於支出；收入不記錄付款方式。
+  const PAYMENTS = ['現金', '刷卡-匯豐', '刷卡-gogo', '刷卡-一銀', '刷卡-富邦'];
+  const UNSPECIFIED_PAYMENT = '未指定';
   const TYPE_LABEL = { expense: '支出', income: '收入' };
   const MAX_AMOUNT = 999999999;
-  const CSV_HEADER = ['日期', '類型', '類別', '金額', '備註', '編號'];
+  const CSV_HEADER = ['日期', '類型', '類別', '金額', '付款方式', '備註', '編號'];
 
   const $ = (selector) => document.querySelector(selector);
   const form = $('#entry-form');
@@ -56,6 +59,7 @@
   }
 
   // 只接受欄位完整、類別合法的資料，避免損壞的儲存內容影響畫面。
+  // 新增付款方式前的舊帳目沒有 payment 欄位，保留為空字串並顯示「未指定」。
   function normalize(raw) {
     if (!raw || !CATEGORIES[raw.type]) return null;
     const amount = parseAmount(raw.amount);
@@ -66,6 +70,7 @@
       amount,
       category: raw.category,
       date: raw.date,
+      payment: raw.type === 'expense' && PAYMENTS.includes(raw.payment) ? raw.payment : '',
       note: String(raw.note ?? '').trim().slice(0, 100),
       createdAt: Number(raw.createdAt) || Date.now(),
     };
@@ -101,6 +106,9 @@
   function fillCategories(type, selected) {
     const select = form.elements.namedItem('category');
     select.replaceChildren(...CATEGORIES[type].map((name) => new Option(name, name, false, name === selected)));
+    const paymentField = $('#payment-field');
+    paymentField.hidden = type !== 'expense';
+    form.elements.namedItem('payment').disabled = type !== 'expense';
   }
 
   function resetForm() {
@@ -122,6 +130,8 @@
     form.elements.namedItem('amount').value = record.amount;
     form.elements.namedItem('date').value = record.date;
     form.elements.namedItem('note').value = record.note;
+    // 舊帳目未指定付款方式時停在「請選擇」，要求使用者補選。
+    if (record.type === 'expense') form.elements.namedItem('payment').value = record.payment;
     submitButton.firstChild.textContent = '儲存修改 ';
     cancelEdit.hidden = false;
     message(formMessage, `正在編輯 ${record.date} 的${TYPE_LABEL[record.type]}。`);
@@ -155,9 +165,14 @@
     balanceNode.textContent = money.format(balance);
     balanceNode.className = `stat-value ${balance < 0 ? 'expense' : 'income'}`;
 
+    renderBreakdown(monthRecords, expense, (r) => r.category, '#breakdown-list', '#breakdown-empty');
+    renderBreakdown(monthRecords, expense, (r) => r.payment || UNSPECIFIED_PAYMENT, '#payment-list', '#payment-empty');
+  }
+
+  function renderBreakdown(monthRecords, expense, keyOf, listSelector, emptySelector) {
     const totals = new Map();
     for (const r of monthRecords) {
-      if (r.type === 'expense') totals.set(r.category, (totals.get(r.category) || 0) + Math.round(r.amount * 100));
+      if (r.type === 'expense') totals.set(keyOf(r), (totals.get(keyOf(r)) || 0) + Math.round(r.amount * 100));
     }
     const rows = [...totals].sort((a, b) => b[1] - a[1]).map(([category, cents]) => {
       const share = expense ? cents / 100 / expense : 0;
@@ -171,8 +186,8 @@
       row.append(element('span', '', category), bar, amount);
       return row;
     });
-    $('#breakdown-list').replaceChildren(...rows);
-    $('#breakdown-empty').hidden = rows.length > 0;
+    $(listSelector).replaceChildren(...rows);
+    $(emptySelector).hidden = rows.length > 0;
   }
 
   function renderList(monthRecords) {
@@ -196,6 +211,11 @@
         li.dataset.id = r.id;
         const main = element('div', 'record-main');
         main.append(element('span', 'record-category', r.category));
+        if (r.type === 'expense') {
+          const payment = element('span', 'record-payment', r.payment || `付款${UNSPECIFIED_PAYMENT}`);
+          payment.dataset.card = String(r.payment.startsWith('刷卡'));
+          main.append(payment);
+        }
         if (r.note) main.append(element('span', 'record-note', r.note));
         const amount = element('span', `record-amount ${r.type}`, signed(r));
         const actions = element('div', 'record-actions');
@@ -254,10 +274,15 @@
       form.elements.namedItem('date').focus();
       return;
     }
+    if (data.get('type') === 'expense' && !PAYMENTS.includes(data.get('payment'))) {
+      message(formMessage, '請選擇付款方式。', 'error');
+      form.elements.namedItem('payment').focus();
+      return;
+    }
     const existing = records.find((r) => r.id === editingId);
     const record = normalize({
       id: existing?.id, createdAt: existing?.createdAt, type: data.get('type'), amount,
-      category: data.get('category'), date: data.get('date'), note: data.get('note'),
+      category: data.get('category'), payment: data.get('payment'), date: data.get('date'), note: data.get('note'),
     });
     if (!record) {
       message(formMessage, '資料格式不正確，請重新確認類別與欄位。', 'error');
@@ -345,7 +370,7 @@
       return;
     }
     const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date) || a.createdAt - b.createdAt);
-    const lines = [CSV_HEADER, ...sorted.map((r) => [r.date, TYPE_LABEL[r.type], r.category, r.amount, r.note, r.id])]
+    const lines = [CSV_HEADER, ...sorted.map((r) => [r.date, TYPE_LABEL[r.type], r.category, r.amount, r.payment, r.note, r.id])]
       .map((row) => row.map(csvCell).join(','));
     const blob = new Blob([`﻿${lines.join('\r\n')}\r\n`], { type: 'text/csv;charset=utf-8' });
     const link = document.createElement('a');
@@ -383,7 +408,7 @@
       const get = (name) => (index[name] >= 0 ? (row[index[name]] ?? '').trim() : '');
       const note = get('備註').replace(/^'(?=[=+\-@\t\r])/, '');
       const record = normalize({ id: get('編號'), type: typeByLabel[get('類型')], category: get('類別'),
-        amount: get('金額'), date: get('日期').replace(/\//g, '-'), note, createdAt: Date.now() + added });
+        amount: get('金額'), payment: get('付款方式'), date: get('日期').replace(/\//g, '-'), note, createdAt: Date.now() + added });
       if (!record) { invalid += 1; continue; }
       if (known.has(record.id)) { duplicated += 1; continue; }
       known.add(record.id);
